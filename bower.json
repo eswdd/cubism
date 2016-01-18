@@ -1,0 +1,16 @@
+{
+  "name": "cubsim",
+  "main": "cubism.v1.js",
+  "scripts": [
+    "cubsim.v1.js"
+  ],
+  "ignore": [
+    ".git",
+    ".gitignore",
+    ".npmignore",
+    "Makefile",
+    "node_modules",
+    "package.json",
+    "src"
+  ]
+}
