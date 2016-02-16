@@ -38,9 +38,9 @@ cubism_contextPrototype.opentsdb = function (address) {
             // m=<aggregator>:[rate[{counter[,<counter_max>[,<reset_value>]]]}:][<down_sampler>:]<metric_name>[{<tag_name1>=<grouping filter>[,...<tag_nameN>=<grouping_filter>]}][{<tag_name1>=<non grouping filter>[,...<tag_nameN>=<non_grouping_filter>]}]
             var target = aggregator + (rateString ? ":" + rateString : "");
 
-            if (step !== 1e4) {
-                target += (!(step % 36e5) ? step / 36e5 + "h" : !(step % 6e4) ? step / 6e4 + "m" : step / 1e3 + "s") + "-" + downsampler;
-            }
+//            if (step !== 1e4) {
+                target += ":" + (!(step % 36e5) ? step / 36e5 + "h" : !(step % 6e4) ? step / 6e4 + "m" : step / 1e3 + "s") + "-" + downsampler;
+//            }
 
             target += ":" + metric;
             if (tagMap) {
