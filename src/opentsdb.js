@@ -33,6 +33,7 @@ cubism_contextPrototype.opentsdb = function (address) {
     source.metric = function (metric, rateString, tagMap, name) {
         var aggregator = "sum";
         var downsampler = "avg";
+        var interpolate = false;
 
         var ret = context.metric(function (start, stop, step, callback) {
             // m=<aggregator>:[rate[{counter[,<counter_max>[,<reset_value>]]]}:][<down_sampler>:]<metric_name>[{<tag_name1>=<grouping filter>[,...<tag_nameN>=<grouping_filter>]}][{<tag_name1>=<non grouping filter>[,...<tag_nameN>=<non_grouping_filter>]}]
@@ -67,7 +68,7 @@ cubism_contextPrototype.opentsdb = function (address) {
                 if (!json) {
                     return callback(new Error("unable to load data"));
                 }
-                var parsed = cubism_opentsdbParse(json); // array response
+                var parsed = cubism_opentsdbParse(json, start, step, interpolate); // array response
                 callback(null, parsed[0]);
             });
         }, name);
@@ -81,6 +82,11 @@ cubism_contextPrototype.opentsdb = function (address) {
             downsampler = _;
             return ret;
         };
+
+        ret.interpolate = function (_) {
+            interpolate = _;
+            return ret;
+        }
 
         return ret;
     }
@@ -111,13 +117,47 @@ function cubism_opentsdbFormatDate(time) {
 }
 
 // Helper method for parsing opentsdb's json response
-function cubism_opentsdbParse(json) {
-    if (json.length == 0) {
+function cubism_opentsdbParse(json, start, step, interpolate) {
+    // no data
+    if (json.length == 0 || json.dps.length == 0) {
         return [[]];
     }
     return json.map(function (ts) {
-        return ts.dps.map(function (array) {
-            return array[1];
-        });
+        if (interpolate) {
+            var firstTime = ts.dps[0][0];
+            var ret = [];
+            for (var v=start; v<firstTime; v+=step) {
+                ret.push(null);
+            }
+            var lastValue;
+            var lastValueTime;
+            var nextIndex = 0;
+            for (var v=firstTime; nextIndex<ts.dps.length; v+=step) {
+                if (ts.dps[nextIndex][0] == v) {
+                    lastValue = ts.dps[nextIndex][1];
+                    lastValueTime = ts.dps[nextIndex][0];
+                    ret.push(lastValue);
+                    nextIndex++;
+                    if (nextIndex>=ts.dps.length) {
+                        break;
+                    }
+                }
+                else {
+                    // interpolate
+                    var nextValue = ts.dps[nextIndex][1];
+                    var nextTime = ts.dps[nextIndex][0];
+                    var timeDiffLastToNext = nextTime - lastValueTime;
+                    var timeDiffLastToNow = v - lastValueTime;
+                    var value = nextValue + ((nextValue - lastValue) * (timeDiffLastToNow / timeDiffLastToNext));
+                    ret.push(value)
+                }
+            }
+            return ret;
+        }
+        else {
+            return ts.dps.map(function (array) {
+                return array[1];
+            });
+        }
     });
 }
