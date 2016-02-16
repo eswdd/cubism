@@ -477,18 +477,20 @@ cubism_contextPrototype.opentsdb = function (address) {
 
         var ret = context.metric(function (start, stop, step, callback) {
             // m=<aggregator>:[rate[{counter[,<counter_max>[,<reset_value>]]]}:][<down_sampler>:]<metric_name>[{<tag_name1>=<grouping filter>[,...<tag_nameN>=<grouping_filter>]}][{<tag_name1>=<non grouping filter>[,...<tag_nameN>=<non_grouping_filter>]}]
-            var target = aggregator + (rateString ? rateString + ":" : "");
+            var target = aggregator + (rateString ? ":" + rateString : "");
 
             if (step !== 1e4) {
                 target += (!(step % 36e5) ? step / 36e5 + "h" : !(step % 6e4) ? step / 6e4 + "m" : step / 1e3 + "s") + "-" + downsampler;
             }
 
             target += ":" + metric;
-            if (tagMap && tagMap.size() > 0) {
+            if (tagMap) {
                 target += "{";
+                var sep = "";
                 for (var tagk in tagMap) {
                     if (tagMap.hasOwnProperty(tagk)) {
-                        target += tagk + "=" + tagMap[tagk];
+                        target += sep + tagk + "=" + tagMap[tagk];
+                        sep = ",";
                     }
                 }
                 target += "}";
@@ -551,6 +553,9 @@ function cubism_opentsdbFormatDate(time) {
 
 // Helper method for parsing opentsdb's json response
 function cubism_opentsdbParse(json) {
+    if (json.length == 0) {
+        return [[]];
+    }
     return json.map(function (ts) {
         return ts.dps.map(function (array) {
             return array[1];
