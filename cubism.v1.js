@@ -475,6 +475,7 @@ cubism_contextPrototype.opentsdb = function (address) {
         var aggregator = "sum";
         var downsampler = "avg";
         var interpolate = false;
+        var squashNegatives = false;
 
         var ret = context.metric(function (start, stop, step, callback) {
             // m=<aggregator>:[rate[{counter[,<counter_max>[,<reset_value>]]]}:][<down_sampler>:]<metric_name>[{<tag_name1>=<grouping filter>[,...<tag_nameN>=<grouping_filter>]}][{<tag_name1>=<non grouping filter>[,...<tag_nameN>=<non_grouping_filter>]}]
@@ -509,7 +510,7 @@ cubism_contextPrototype.opentsdb = function (address) {
                 if (!json) {
                     return callback(new Error("unable to load data"));
                 }
-                var parsed = cubism_opentsdbParse(json, start, step, interpolate); // array response
+                var parsed = cubism_opentsdbParse(json, start, step, interpolate, squashNegatives); // array response
                 callback(null, parsed[0]);
             });
         }, name);
@@ -526,6 +527,11 @@ cubism_contextPrototype.opentsdb = function (address) {
 
         ret.interpolate = function (_) {
             interpolate = _;
+            return ret;
+        }
+
+        ret.squashNegatives = function(_) {
+            squashNegatives = _;
             return ret;
         }
 
@@ -558,7 +564,7 @@ function cubism_opentsdbFormatDate(time) {
 }
 
 // Helper method for parsing opentsdb's json response
-function cubism_opentsdbParse(json, start, step, interpolate) {
+function cubism_opentsdbParse(json, start, step, interpolate, squashNegatives) {
     // no data
     if (json.length == 0 || json.dps.length == 0) {
         return [[]];
@@ -577,7 +583,7 @@ function cubism_opentsdbParse(json, start, step, interpolate) {
                 if (ts.dps[nextIndex][0] == v) {
                     lastValue = ts.dps[nextIndex][1];
                     lastValueTime = ts.dps[nextIndex][0];
-                    ret.push(lastValue);
+                    ret.push(squashNegatives && lastValue < 0 ? 0 : lastValue);
                     nextIndex++;
                     if (nextIndex>=ts.dps.length) {
                         break;
@@ -590,15 +596,22 @@ function cubism_opentsdbParse(json, start, step, interpolate) {
                     var timeDiffLastToNext = nextTime - lastValueTime;
                     var timeDiffLastToNow = v - lastValueTime;
                     var value = nextValue + ((nextValue - lastValue) * (timeDiffLastToNow / timeDiffLastToNext));
-                    ret.push(value)
+                    ret.push(squashNegatives && value < 0 ? 0 : value)
                 }
             }
             return ret;
         }
         else {
-            return ts.dps.map(function (array) {
-                return array[1];
-            });
+            if (squashNegatives) {
+                return ts.dps.map(function (array) {
+                    return array[1] < 0 ? 0 : array[1];
+                });
+            }
+            else {
+                return ts.dps.map(function (array) {
+                    return array[1];
+                });
+            }
         }
     });
 }cubism_contextPrototype.gangliaWeb = function(config) {
