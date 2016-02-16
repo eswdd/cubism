@@ -14,7 +14,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "http://github.com/square/cubism.git"
+    "url": "http://github.com/eswdd/cubism.git"
   },
   "main": "./index.js",
   "dependencies": {
