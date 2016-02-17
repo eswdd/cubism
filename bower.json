@@ -1,8 +1,9 @@
 {
-  "name": "cubsim",
+  "name": "cubism",
   "main": "cubism.v1.js",
   "scripts": [
-    "cubsim.v1.js"
+    "cubism.v1.js"
+    "cubism.v1.min.js"
   ],
   "ignore": [
     ".git",
