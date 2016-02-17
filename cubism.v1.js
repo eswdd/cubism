@@ -566,10 +566,13 @@ function cubism_opentsdbFormatDate(time) {
 // Helper method for parsing opentsdb's json response
 function cubism_opentsdbParse(json, start, step, interpolate, squashNegatives) {
     // no data
-    if (json.length == 0 || json.dps.length == 0) {
+    if (json.length == 0) {
         return [[]];
     }
     return json.map(function (ts) {
+        if (ts.dps.length == 0) {
+            return [];
+        }
         if (interpolate) {
             var firstTime = ts.dps[0][0];
             var ret = [];
@@ -614,7 +617,8 @@ function cubism_opentsdbParse(json, start, step, interpolate, squashNegatives) {
             }
         }
     });
-}cubism_contextPrototype.gangliaWeb = function(config) {
+}
+cubism_contextPrototype.gangliaWeb = function(config) {
   var host = '',
       uriPathPrefix = '/ganglia2/';
  
