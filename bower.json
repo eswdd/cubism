@@ -2,7 +2,7 @@
   "name": "cubism",
   "main": "cubism.v1.js",
   "scripts": [
-    "cubism.v1.js"
+    "cubism.v1.js",
     "cubism.v1.min.js"
   ],
   "ignore": [
